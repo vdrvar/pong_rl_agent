@@ -1,0 +1,16 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Poetry virtual environments
+.env
+.venv
+
+# Config files containing sensitive data
+config/config.yaml
+
+# Logs
+logs/
+
+# Data files
+data/
