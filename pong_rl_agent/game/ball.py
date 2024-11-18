@@ -4,9 +4,11 @@
 Ball module for Pong.
 """
 
-import pygame
 import random
+
+import pygame
 from game.paddle import Paddle
+
 
 class Ball:
     """
@@ -32,11 +34,13 @@ class Ball:
         self.screen_height = screen_height
 
         # Ball's rectangle for collision detection
-        self.rect = pygame.Rect(self.x - self.RADIUS, self.y - self.RADIUS, self.RADIUS * 2, self.RADIUS * 2)
+        self.rect = pygame.Rect(
+            self.x - self.RADIUS, self.y - self.RADIUS, self.RADIUS * 2, self.RADIUS * 2
+        )
 
-        # Velocity of the ball
-        self.x_vel = random.choice([-5, 5])  # Start moving left or right randomly
-        self.y_vel = random.choice([-5, 5])  # Start moving up or down randomly
+        # Velocity of the ball (reduced speed)
+        self.x_vel = random.choice([-3, 3])  # Changed from [-5, 5] to [-3, 3]
+        self.y_vel = random.choice([-3, 3])  # Changed from [-5, 5] to [-3, 3]
 
     def update(self, paddles: list) -> None:
         """
@@ -66,7 +70,7 @@ class Ball:
         Args:
             surface (pygame.Surface): The surface to draw the ball on.
         """
-        pygame.draw.circle(surface, self.COLOR, (self.x, self.y), self.RADIUS)
+        pygame.draw.circle(surface, self.COLOR, (int(self.x), int(self.y)), self.RADIUS)
 
     def reset(self) -> None:
         """
@@ -74,9 +78,8 @@ class Ball:
         """
         self.x = self.screen_width // 2
         self.y = self.screen_height // 2
-        self.x_vel = random.choice([-5, 5])
-        self.y_vel = random.choice([-5, 5])
-
+        self.x_vel = random.choice([-3.5, 3.5])  # Changed from [-5, 5] to [-3, 3]
+        self.y_vel = random.choice([-3.5, 3.5])  # Changed from [-5, 5] to [-3, 3]
 
     def handle_collision(self, paddles: list) -> None:
         for paddle in paddles:
@@ -88,7 +91,7 @@ class Ball:
                 angle = collision_ratio * (5 * (3.14 / 12))  # Max angle of 75 degrees
 
                 # Adjust velocities
-                speed = (self.x_vel ** 2 + self.y_vel ** 2) ** 0.5
+                speed = (self.x_vel**2 + self.y_vel**2) ** 0.5
                 self.x_vel = -self.x_vel
                 self.y_vel = speed * collision_ratio
 
@@ -98,4 +101,3 @@ class Ball:
                 else:
                     self.x = paddle.rect.left - self.RADIUS
                 break
-

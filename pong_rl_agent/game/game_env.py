@@ -10,6 +10,7 @@ from game.paddle import Paddle
 from game.ball import Ball
 import random
 
+
 class GameEnv:
     """
     Manages the game environment, updates game state, and handles interactions with the RL agent.
@@ -33,33 +34,34 @@ class GameEnv:
 
         # Initialize paddles
         self.human_paddle = Paddle(
-            x=50, 
-            y=(self.height - Paddle.HEIGHT) // 2, 
-            screen_height=self.height
+            x=50, y=(self.height - Paddle.HEIGHT) // 2, screen_height=self.height
         )
 
         self.ai_paddle = Paddle(
             x=self.width - 50 - Paddle.WIDTH,
             y=(self.height - Paddle.HEIGHT) // 2,
             screen_height=self.height,
-            speed=5  # Reduced speed for AI paddle
+            speed=5,  # Reduced speed for AI paddle
         )
 
         # Initialize ball
         self.ball = Ball(
-            x=self.width // 2, 
-            y=self.height // 2, 
-            screen_width=self.width, 
-            screen_height=self.height
+            x=self.width // 2,
+            y=self.height // 2,
+            screen_width=self.width,
+            screen_height=self.height,
         )
 
         self.ai_reaction_time = 200  # AI reacts every 200 milliseconds
         self.last_ai_update = pygame.time.get_ticks()
 
+        self.max_score = 3  # Winning score
+        self.game_over = False  # Flag to indicate if the game is over
+
         self.human_score = 0
         self.ai_score = 0
         pygame.font.init()
-        self.font = pygame.font.SysFont('Arial', 30)
+        self.font = pygame.font.SysFont("Arial", 30)
 
     def reset(self) -> None:
         """
@@ -83,6 +85,10 @@ class GameEnv:
         """
         Updates the game state based on user input and ball movement.
         """
+
+        if self.game_over:
+            return  # Skip updates if the game is over
+
         # Handle human paddle movement
         keys = pygame.key.get_pressed()
         dy = 0
@@ -98,7 +104,6 @@ class GameEnv:
         # Update ball position and handle collisions
         self.ball.update(paddles=[self.human_paddle, self.ai_paddle])
 
-
         # Update ball position and handle collisions
         self.ball.update(paddles=[self.human_paddle, self.ai_paddle])
 
@@ -106,12 +111,17 @@ class GameEnv:
         if self.ball.x - self.ball.RADIUS <= 0:
             # AI scores
             self.ai_score += 1
-            self.reset()
+            if self.ai_score >= self.max_score:
+                self.game_over = True
+            else:
+                self.reset()
         elif self.ball.x + self.ball.RADIUS >= self.width:
             # Human scores
             self.human_score += 1
-            self.reset()
-
+            if self.human_score >= self.max_score:
+                self.game_over = True
+            else:
+                self.reset()
 
     def ai_paddle_move(self) -> None:
         """
@@ -139,12 +149,13 @@ class GameEnv:
         """
         self.screen.fill((0, 0, 0))  # Clear screen with black
         self.human_paddle.draw(self.screen)
-        self.ai_paddle.draw(self.screen)  # Draw the AI paddle
+        self.ai_paddle.draw(self.screen)
         self.ball.draw(self.screen)
-        pygame.display.flip()
 
         # Render the scores
-        human_score_surface = self.font.render(f"{self.human_score}", True, (255, 255, 255))
+        human_score_surface = self.font.render(
+            f"{self.human_score}", True, (255, 255, 255)
+        )
         ai_score_surface = self.font.render(f"{self.ai_score}", True, (255, 255, 255))
 
         # Position the scores
@@ -159,11 +170,83 @@ class GameEnv:
         """
         while self.running:
             self.clock.tick(60)  # Limit to 60 FPS
-            self.handle_events()
-            self.step()
-            self.render()
+
+            if not self.game_over:
+                self.handle_events()
+                self.step()
+                self.render()
+            else:
+                self.display_game_over()
+                self.handle_game_over_events()
 
         self.close()
+
+    def display_game_over(self) -> None:
+        """
+        Displays the Game Over screen.
+        """
+        self.screen.fill((0, 0, 0))  # Clear screen with black
+
+        # Display "Game Over" text
+        game_over_text = self.font.render("Game Over", True, (255, 255, 255))
+        self.screen.blit(
+            game_over_text,
+            (
+                self.width // 2 - game_over_text.get_width() // 2,
+                self.height // 2 - 60,
+            ),
+        )
+
+        # Display winner
+        if self.human_score >= self.max_score:
+            winner_text = self.font.render("You Win!", True, (255, 255, 255))
+        else:
+            winner_text = self.font.render("AI Wins!", True, (255, 255, 255))
+        self.screen.blit(
+            winner_text,
+            (
+                self.width // 2 - winner_text.get_width() // 2,
+                self.height // 2 - 20,
+            ),
+        )
+
+        # Display instructions to restart or quit
+        restart_text = self.font.render(
+            "Press R to Restart or Q to Quit", True, (255, 255, 255)
+        )
+        self.screen.blit(
+            restart_text,
+            (
+                self.width // 2 - restart_text.get_width() // 2,
+                self.height // 2 + 20,
+            ),
+        )
+
+        pygame.display.flip()
+
+    def handle_game_over_events(self) -> None:
+        """
+        Handles events during the game over state.
+        """
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r:
+                    # Restart the game
+                    self.restart_game()
+                elif event.key == pygame.K_q:
+                    # Quit the game
+                    self.running = False
+
+    def restart_game(self) -> None:
+        """
+        Restarts the game by resetting scores and game state.
+        """
+        self.human_score = 0
+        self.ai_score = 0
+        self.game_over = False
+        self.reset()
 
     def close(self) -> None:
         """
