@@ -17,7 +17,7 @@ class GameEnv:
     Manages the game environment, updates game state, and handles interactions with the RL agent.
     """
 
-    def __init__(self, width: int = 800, height: int = 600) -> None:
+    def __init__(self, width: int = 1000, height: int = 800) -> None:
         """
         Initializes the game environment.
 
@@ -67,6 +67,9 @@ class GameEnv:
         # Initialize the RL agent
         self.agent = Agent(action_space_size=3)  # Actions: 0 (up), 1 (stay), 2 (down)
 
+        self.state = self.get_state()
+        self.total_reward = 0  # Initialize total reward
+
     def reset(self) -> None:
         """
         Resets the game to the initial state after a point is scored.
@@ -89,9 +92,11 @@ class GameEnv:
         """
         Updates the game state based on user input and ball movement.
         """
-
         if self.game_over:
-            return  # Skip updates if the game is over
+            return
+
+        # Store the current state
+        current_state = self.state
 
         # Handle human paddle movement
         keys = pygame.key.get_pressed()
@@ -106,15 +111,27 @@ class GameEnv:
         self.ai_paddle_move()
 
         # Update ball position and handle collisions
+        previous_ball_x = self.ball.x  # Store previous ball position
         self.ball.update(paddles=[self.human_paddle, self.ai_paddle])
 
-        # Update ball position and handle collisions
-        self.ball.update(paddles=[self.human_paddle, self.ai_paddle])
+        # Initialize reward
+        reward = 0
+
+        # Check if the AI paddle hit the ball
+        if self.ball.rect.colliderect(self.ai_paddle.rect):
+            reward += 1  # Positive reward for hitting the ball
+
+        # Check if the ball passed the AI paddle (missed by AI)
+        if previous_ball_x > self.ai_paddle.x and self.ball.x < self.ai_paddle.x:
+            reward -= 1  # Negative reward for missing the ball
 
         # Check for scoring
+        done = False
         if self.ball.x - self.ball.RADIUS <= 0:
             # AI scores
             self.ai_score += 1
+            reward += 10  # Positive reward for scoring
+            done = True
             if self.ai_score >= self.max_score:
                 self.game_over = True
             else:
@@ -122,10 +139,33 @@ class GameEnv:
         elif self.ball.x + self.ball.RADIUS >= self.width:
             # Human scores
             self.human_score += 1
+            reward -= 1  # Negative reward for opponent scoring
+            done = True
             if self.human_score >= self.max_score:
                 self.game_over = True
             else:
                 self.reset()
+
+        # Optional: Small penalty for each step to encourage efficiency
+        # reward -= 0.01
+
+        # Get the next state
+        next_state = self.get_state()
+
+        # Store the experience in the agent's memory
+        action = self.agent.last_action
+        self.agent.store_experience((current_state, action, reward, next_state, done))
+
+        # Update the state
+        self.state = next_state
+
+        # Update the total reward before printing
+        self.total_reward += reward
+
+        # After calculating the reward in the step method
+        print(f"Reward: {reward}, Total Reward: {self.total_reward}")
+
+        print(f"Number of experiences collected: {len(self.agent.memory)}")
 
     def ai_paddle_move_old(self) -> None:
         """
@@ -155,10 +195,9 @@ class GameEnv:
         state = self.get_state()
         # Let the agent select an action
         action = self.agent.select_action(state)
+        # No need to store last_action here anymore since it's stored in the agent
         # Map the action to dy
-        dy = (
-            action - 1
-        )  # action 0 -> dy=-1 (up), action 1 -> dy=0 (stay), action 2 -> dy=1 (down)
+        dy = action - 1
         self.ai_paddle.move(dy=dy)
 
     def render(self) -> None:

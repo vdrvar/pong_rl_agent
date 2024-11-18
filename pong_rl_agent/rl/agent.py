@@ -22,6 +22,7 @@ class Agent:
         """
         self.action_space_size = action_space_size
         self.memory = []  # Experience replay memory
+        self.last_action = None  # Initialize last_action
 
     def select_action(self, state: List[float]) -> int:
         """
@@ -34,7 +35,9 @@ class Agent:
             int: The action to take.
         """
         # For now, select a random action
-        return random.randint(0, self.action_space_size - 1)
+        action = random.randint(0, self.action_space_size - 1)
+        self.last_action = action  # Store the action
+        return action
 
     def optimize_model(self) -> None:
         """

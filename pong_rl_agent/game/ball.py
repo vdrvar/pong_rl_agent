@@ -39,8 +39,8 @@ class Ball:
         )
 
         # Velocity of the ball (reduced speed)
-        self.x_vel = random.choice([-3, 3])  # Changed from [-5, 5] to [-3, 3]
-        self.y_vel = random.choice([-3, 3])  # Changed from [-5, 5] to [-3, 3]
+        self.x_vel = random.choice([-4, 4])  # Changed from [-5, 5] to [-3, 3]
+        self.y_vel = random.choice([-4, 4])  # Changed from [-5, 5] to [-3, 3]
 
         self.max_vel = 3  # Maximum velocity for normalization
 
