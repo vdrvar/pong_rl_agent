@@ -42,6 +42,8 @@ class Ball:
         self.x_vel = random.choice([-3, 3])  # Changed from [-5, 5] to [-3, 3]
         self.y_vel = random.choice([-3, 3])  # Changed from [-5, 5] to [-3, 3]
 
+        self.max_vel = 3  # Maximum velocity for normalization
+
     def update(self, paddles: list) -> None:
         """
         Updates the ball's position based on its velocity and handles collisions.

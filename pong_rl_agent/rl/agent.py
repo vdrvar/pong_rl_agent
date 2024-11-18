@@ -4,34 +4,37 @@
 Reinforcement Learning agent module.
 """
 
-from rl.model import DQNModel
-from rl.replay_buffer import ReplayBuffer
-import torch
-from typing import Any
+import random
+from typing import List, Tuple
+
 
 class Agent:
     """
-    RL agent that interacts with the environment and learns from experiences.
+    RL agent that interacts with the environment and selects actions.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, action_space_size: int) -> None:
         """
-        Initializes the agent with neural network models and replay buffer.
-        """
-        # Initialize models, optimizer, replay buffer, etc.
-        pass  # To be implemented
+        Initializes the agent.
 
-    def select_action(self, state: Any) -> int:
+        Args:
+            action_space_size (int): The number of possible actions.
+        """
+        self.action_space_size = action_space_size
+        self.memory = []  # Experience replay memory
+
+    def select_action(self, state: List[float]) -> int:
         """
         Selects an action based on the current state.
 
         Args:
-            state: The current state of the environment.
+            state (List[float]): The current state of the environment.
 
         Returns:
             int: The action to take.
         """
-        pass  # To be implemented
+        # For now, select a random action
+        return random.randint(0, self.action_space_size - 1)
 
     def optimize_model(self) -> None:
         """
@@ -56,3 +59,12 @@ class Agent:
             path (str): The file path to load the model from.
         """
         pass  # To be implemented
+
+    def store_experience(self, experience: Tuple) -> None:
+        """
+        Stores an experience in memory.
+
+        Args:
+            experience (Tuple): A tuple of (state, action, reward, next_state, done).
+        """
+        self.memory.append(experience)

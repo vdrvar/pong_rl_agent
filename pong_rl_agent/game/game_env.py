@@ -4,11 +4,12 @@
 Game environment module for Pong.
 """
 
-import pygame
-from typing import Tuple, Optional
-from game.paddle import Paddle
-from game.ball import Ball
 import random
+
+import pygame
+from game.ball import Ball
+from game.paddle import Paddle
+from rl.agent import Agent
 
 
 class GameEnv:
@@ -62,6 +63,9 @@ class GameEnv:
         self.ai_score = 0
         pygame.font.init()
         self.font = pygame.font.SysFont("Arial", 30)
+
+        # Initialize the RL agent
+        self.agent = Agent(action_space_size=3)  # Actions: 0 (up), 1 (stay), 2 (down)
 
     def reset(self) -> None:
         """
@@ -123,7 +127,7 @@ class GameEnv:
             else:
                 self.reset()
 
-    def ai_paddle_move(self) -> None:
+    def ai_paddle_move_old(self) -> None:
         """
         AI logic with randomness to make mistakes.
         """
@@ -142,6 +146,20 @@ class GameEnv:
                 move_direction = 0
 
         self.ai_paddle.move(dy=move_direction)
+
+    def ai_paddle_move(self) -> None:
+        """
+        Controls the AI paddle using the RL agent.
+        """
+        # Get the current state
+        state = self.get_state()
+        # Let the agent select an action
+        action = self.agent.select_action(state)
+        # Map the action to dy
+        dy = (
+            action - 1
+        )  # action 0 -> dy=-1 (up), action 1 -> dy=0 (stay), action 2 -> dy=1 (down)
+        self.ai_paddle.move(dy=dy)
 
     def render(self) -> None:
         """
@@ -253,3 +271,20 @@ class GameEnv:
         Closes the game environment.
         """
         pygame.quit()
+
+    def get_state(self) -> list:
+        """
+        Returns the current state of the environment as a list of normalized values.
+
+        Returns:
+            list: A list representing the normalized state.
+        """
+        # Normalize positions and velocities
+        ball_x = self.ball.x / self.width
+        ball_y = self.ball.y / self.height
+        ball_x_vel = (self.ball.x_vel + self.ball.max_vel) / (2 * self.ball.max_vel)
+        ball_y_vel = (self.ball.y_vel + self.ball.max_vel) / (2 * self.ball.max_vel)
+        ai_paddle_y = self.ai_paddle.y / self.height
+        human_paddle_y = self.human_paddle.y / self.height
+
+        return [ball_x, ball_y, ball_x_vel, ball_y_vel, ai_paddle_y, human_paddle_y]
