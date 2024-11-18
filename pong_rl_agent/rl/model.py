@@ -6,6 +6,8 @@ Neural network model for the RL agent.
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
 
 class DQNModel(nn.Module):
     """
@@ -21,8 +23,9 @@ class DQNModel(nn.Module):
             output_size (int): The size of the output layer.
         """
         super(DQNModel, self).__init__()
-        # Define layers
-        pass  # To be implemented
+        self.fc1 = nn.Linear(input_size, 128)  # First hidden layer with 128 units
+        self.fc2 = nn.Linear(128, 128)  # Second hidden layer with 128 units
+        self.fc3 = nn.Linear(128, output_size)  # Output layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -34,4 +37,7 @@ class DQNModel(nn.Module):
         Returns:
             torch.Tensor: Output tensor.
         """
-        pass  # To be implemented
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)  # Output Q-values for each action
+        return x
